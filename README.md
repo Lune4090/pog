@@ -11,16 +11,16 @@ Graph-based Game/GUI/Plotting abstruction framework.
 Currently, this library depends below libraries
 
 1. [naylib](https://github.com/planetis-m/naylib)
-- [raylib](https://github.com/raysan5/raylib) wrapper, being used as OpenGL backend / sound utility.
+- [raylib](https://github.com/raysan5/raylib) wrapper, being used as OpenGL backend / sound utility, written in pure nim (raylib library is written in C).
 - Dependecy to naylib(raylib) is carefully limited to make use other backend library easier.
 
-2. [grim](https://github.com/ebran/grim)
-- Graph system, pure nim.
+2. [results](https://github.com/arnetheduck/nim-results)
+- Bring result type into nim, written in pure nim.
 
 3. [vmath](https://github.com/treeform/vmath)
-- 2D/3D vector calculation, pure nim.
+- 2D/3D vector calculation, written in pure nim.
 
-2 and 3 are pure nim and naylib can cross compile (see naylib doc), thus anything build on this library will easily cross-compiled to a lot of platform (linux -> WebAssembly, Android, ...) 
+All of the above libraries are written in pure nim and raylib can cross compile (see naylib/raylib doc), thus anything build on this library will easily cross-compiled to a lot of platform (linux -> WebAssembly, Android, ...) 
 
 ### Features
 
@@ -29,48 +29,46 @@ High-level abstruction
   - Only plan to draw, interface to drawing are supported
   - Real drawing is done by backend library
 
-ECS-Graph
+Obj-Graph
 
-- Entity: `type Entity = Object`
-  - All entity have 
-    1. uID: `int`
-    2. index of the component (where actual data is stored): `tables{<component.uID: int>, <postion in the component: int>}`
-
-- Component: `seq[T]`
-  - T depends on each data type.
-
-- ComponentTable: `{<component idx: Int>, <component: seq[T]>}`
-  - components are accessed through component table.
+- gameObj: `type GameObject = object of RootObj`
+  1. uID: `int`
+  - User or library predefined object can inherit this obj to use below functionality.
   
-- System: `func(Entity.uID: var Int)`
-  - EverySystem only treats entity
-  - real operation is performed on entity's component.
-  - !!! In general, touch entity directry will cause unchained data transform !!!
-    - e.g. When "Sun" entity has child entity "Earth", and its movement will affect Earth position like x_e = abs(Sun-Earth)*cos(θ), direct transformation of Sun will mean sudden change of substance between Sun and Earth = abs(Sun - Earth)
-    - In the above case, if let r = abs(Sun - Earth) is initially defined and use it to define effect of Sun movement to Earth position, direct transformation of 
+- graph: `type Graph = object of RootObj`
+  1. uID: `int`
+  2. childNodeUIDs: `{ <target: node.uID>, <childs: seq[node.uID]> }`
+  3. parentNodeUIDs: `{ <target: node.uID>, <parents: seq[node.uID]> }`
+  4. taggedNodeUIDs: `{ <target: node.uID>, <tagged
+  Nodes: seq[node.uID]> }`
+  5. forwardEdges: `{ <target: node.uID>, <forwardEdges: seq[Edge]> }`
+  6. backwardEdges: `{ <target: node.uID>, <backwardEdges: seq[Edge]> }`
+  7. nondirectionalEdges: `{ <target: node.uID>, <nondirectionalEdges: seq[Edge]> }`
 
-Graph (based on [grim](https://github.com/ebran/grim) library)
-- graph: `graph`
-  - graph info can easily access through itself.
-  
-- Node: `graph.node`
-  - All node have
-    1. uID: Int
-    - uID is used to register the entity to graph
-    2. parent uID: `uID: Int`
-    3. child uID: `uID: Int`
-    4. entity uIDs: `seq[uID: Int]`
-    - system can easily track its parent/child through graph
-      - e.g. relative position -> global position
+- node: `type Node = object of RootObj`
+  1. uID: `Int`
+  2. gameObj_uIDs: `seq[gameObj.uID: Int]`
+  - system can easily track its parent/child through graph
+    - e.g. relative position -> global position
 
-- Edge: `graph.edge` 
-  - All edge have
-    1. uID: Int
-    2. funcname: func(Node.entity_uIDs: var seq[entity.uID:Int])
+- edge: `type Edge = object` 
+  1. uID: Int
+  2. connection: `{ <isDirectional: bool>, <parentNodeUID: node.uID>, <childNodeUID: node.uID> }`
+  3. function: `func(nodeUIDs: seq[node.uID])`
 
-- Path: `graph.path`
+- path: `type Path = object of RootObj`
+  1. RootNodeUID: `node.uID`
+  2. chainedEdge: `seq[Edge]`
   - Will be beneficial temporally occurency propagation
 
+
+- objectTables: `{ <gameObj.uID>, <object: GameObject> }`
+
+- MaptoNode: `func(obj: GameObject, graph: Graph, node: Node)`
+
+- initNode: `func(graph: Graph): Node`
+
+- initEdge: `func(graph: Graph): Edge`
 
 ### examples
 
